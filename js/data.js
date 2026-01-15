@@ -109,13 +109,13 @@ window.demons = [
     },
     {
         rank: 19, name: "Kyouki", creator: "{出見塩}Demishio", verifier: "{出見塩}Demishio", id: "86018142", points: "162.80",
-        image: "https://i.ytimg.com/vi/KDa5c0CJTHs/maxresdefault.jpg", video: "https://www.youtube.com/watch?v=KDa5c0CJTHs", length: "XL",
+        image: "https://i.ytimg.com/vi/KDa5c0CJTHs/hqdefault.jpg", video: "https://www.youtube.com/watch?v=KDa5c0CJTHs", length: "XL",
         victors: ["{出見塩}Demishio"],
         about: "He built the gameplay himself He decorated the level himself He verified it himself Such determination."
     },
     {
         rank: 20, name: "Subterminal Point", creator: "OniLink", verifier: "Zoink", id: "123998471", points: "159.00",
-        image: "https://i.ytimg.com/vi/9fsZ014qB3s/maxresdefault.jpg", video: "https://www.youtube.com/watch?v=9fsZ014qB3s", length: "XL",
+        image: "https://i.ytimg.com/vi/9fsZ014qB3s/hqdefault.jpg", video: "https://www.youtube.com/watch?v=9fsZ014qB3s", length: "XL",
         victors: ["Zoink", "Trick"],
         about: "Reaching the absolute limit."
     },
