@@ -8,7 +8,8 @@ class DemonListApp {
             filter: '',
             sortBy: 'rank',
             focusedIndex: 0,
-            isLoading: true
+            isLoading: true,
+            currentView: 'main' // 'main', 'stats', 'roulette'
         };
 
         this.els = {
@@ -16,7 +17,8 @@ class DemonListApp {
             searchInput: document.getElementById('search-input'),
             detailView: document.getElementById('level-detail-view'),
             btnSort: document.getElementById('btn-sort'),
-            btnRandom: document.getElementById('btn-random')
+            btnRandom: document.getElementById('btn-random'),
+            // Note: Navigation elements are set up in setupNavigation
         };
 
         this.colorThief = new ColorThief();
@@ -27,6 +29,46 @@ class DemonListApp {
         this.fetchLevels();
         this.setupEventListeners();
         this.setupKeyboardNav();
+        this.setupNavigation();
+        this.initRoulette();
+        this.initTiltEffect();
+    }
+
+    initTiltEffect() {
+        // Simple Vanilla Tilt Implementation
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.tilt-card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Check if mouse is near/over the card to activate (optimization)
+                // Expanding the hit area slightly or just checking if it is within reasonable bounds
+                // For this localized effect, we want it mainly when hovering
+                const isHovering = x >= 0 && x <= rect.width && y >= 0 && y <= rect.height;
+
+                if (isHovering) {
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+
+                    // Max rotation deg
+                    const maxRot = 10;
+
+                    const rotateX = ((y - centerY) / centerY) * -maxRot;
+                    const rotateY = ((x - centerX) / centerX) * maxRot;
+
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                    card.style.transition = 'transform 0.1s ease-out';
+                } else {
+                    // Reset if we moved away (and check if we weren't already reset to avoid layout thrashing)
+                    if (card.style.transform !== 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)' && card.style.transform !== '') {
+                        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                        card.style.transition = 'transform 0.5s ease-out';
+                    }
+                }
+            });
+        });
     }
 
     async fetchLevels() {
@@ -39,8 +81,6 @@ class DemonListApp {
             this.state.levels = data.map(d => ({
                 rank: d.position,
                 name: d.name,
-                creator: d.publisher.name, // Using publisher as creator
-                verifier: d.verifier.name,
                 creator: d.publisher.name, // Using publisher as creator
                 verifier: d.verifier.name,
                 id: d.id.toString(), // Pointercrate ID for API calls
@@ -69,27 +109,23 @@ class DemonListApp {
             if (this.state.levels.length > 0) {
                 this.selectLevel(this.state.levels[0].id);
             }
+            this.renderStats(); // Calculate stats once data is loaded
         }
     }
 
     calculatePoints(rank) {
-        // Approximate points formula used by some lists or just a placeholder logic
-        // Real formula is complex, let's use a simple linear decay for visual effect if strict accuracy isn't critical,
-        // OR just fetch it. But since user wants "smart", let's try a realistic curve.
-        // Formula: (100 / sqrt((rank - 1) / 50 + 0.444444) - 50) * K? 
-        // Let's just use the static points logic or a placeholder.
-        // Actually, looking at the static data: Rank 1 = 250, Rank 75 = ~??
-        // Let's just return "N/A" -> Users care about points. 
-        // Let's copy a common formula:
         if (rank > 150) return "0.00";
-        // Simple approximation based on static data: 250 - (rank * ...)
-        // Let's just return a generic value or mapped data if available.
-        return "---";
+        // Pointercrate Formula approximation
+        // Base: (100 / sqrt((rank - 1) / 50 + 0.444444) - 50)
+        // Scaled by 2.5 to match max 250 points
+        const score = 2.5 * (100 / Math.sqrt((rank - 1) / 50 + 0.444444) - 50);
+        return score.toFixed(2);
     }
 
     setupEventListeners() {
         // Search
         this.els.searchInput.addEventListener('input', (e) => {
+            if (this.state.currentView !== 'main') this.switchView('main');
             this.state.filter = e.target.value.toLowerCase();
             this.state.focusedIndex = 0;
             this.renderList();
@@ -114,8 +150,10 @@ class DemonListApp {
             this.selectLevel(this.state.levels[0].id);
         });
 
-        // Random
+        // Random (Surprise Me in Sidebar)
         this.els.btnRandom.addEventListener('click', () => {
+            // Switch to main view if not already
+            if (this.state.currentView !== 'main') this.switchView('main');
             const randomIndex = Math.floor(Math.random() * this.state.levels.length);
             const randomLevel = this.state.levels[randomIndex];
             this.selectLevel(randomLevel.id);
@@ -125,8 +163,68 @@ class DemonListApp {
         });
     }
 
+    setupNavigation() {
+        this.els.nav = {
+            main: document.getElementById('nav-main'),
+            stats: document.getElementById('nav-stats'),
+            roulette: document.getElementById('nav-roulette'),
+            legacy: document.getElementById('nav-legacy')
+        };
+
+        this.els.views = {
+            main: document.getElementById('level-detail-view'),
+            stats: document.getElementById('stats-view'),
+            roulette: document.getElementById('roulette-view')
+        };
+
+        // Navigation Clicks
+        this.els.nav.main.addEventListener('click', (e) => { e.preventDefault(); this.switchView('main'); });
+        this.els.nav.stats.addEventListener('click', (e) => { e.preventDefault(); this.switchView('stats'); });
+        this.els.nav.roulette.addEventListener('click', (e) => { e.preventDefault(); this.switchView('roulette'); });
+        this.els.nav.legacy.addEventListener('click', (e) => { e.preventDefault(); alert('Legacy List coming soon!'); });
+    }
+
+    switchView(viewName) {
+        this.state.currentView = viewName;
+
+        // Update Nav Active State
+        Object.values(this.els.nav).forEach(el => {
+            if (el) { // Legacy might be null or handled differently
+                el.classList.remove('text-white', 'after:w-full');
+                el.classList.add('hover:text-white', 'hover:text-glow', 'after:w-0');
+                // Reset underline styles basically
+                // Currently only Main list has the complex style in HTML. 
+                // Let's standardise active state logic visually.
+                // Ideally we toggle a class that adds the underline.
+            }
+        });
+
+        // Simple active state toggle for now (improving the HTML structure later would be better but this works)
+        const activeNav = this.els.nav[viewName];
+        if (activeNav) {
+            activeNav.classList.remove('hover:text-white', 'hover:text-glow');
+            activeNav.classList.add('text-white');
+            // We'll manage the underline manually via class manipulation if we want animations,
+            // or just rely on the text color for now to keep it simple and robust.
+        }
+
+        // Hide all views
+        Object.values(this.els.views).forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('fade-in');
+        });
+
+        // Show selected view
+        const view = this.els.views[viewName];
+        view.classList.remove('hidden');
+        void view.offsetWidth; // Reflow for animation
+        view.classList.add('fade-in');
+    }
+
     setupKeyboardNav() {
         document.addEventListener('keydown', (e) => {
+            if (this.state.currentView !== 'main') return; // Only nav in main view
+
             const visibleLevels = this.getVisibleLevels();
             if (visibleLevels.length === 0) return;
 
@@ -148,6 +246,8 @@ class DemonListApp {
     }
 
     selectLevel(id, scrollToList = false) {
+        if (this.state.currentView !== 'main') this.switchView('main'); // Switch back if clicking from elsewhere (unlikely but safe)
+
         const level = this.state.levels.find(l => l.id === id);
         if (!level) return;
 
@@ -173,39 +273,30 @@ class DemonListApp {
         this.setText('detail-name', level.name);
         this.setText('detail-creator', level.creator);
         this.setText('detail-verifier', level.verifier);
-        this.setText('detail-verifier', level.verifier);
         this.setText('detail-id', level.level_id);
-        this.setText('detail-points', level.points);
         this.setText('detail-points', level.points);
         this.setText('detail-length', level.length);
         this.setText('detail-about', level.about);
 
-        const ytId = this.getYouTubeId(level.video);
-        const highResImg = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : level.image;
-
+        // Image Handling
         const detailImg = document.getElementById('detail-image');
-        // Ensure crossOrigin is set for ColorThief to work on external images
-        detailImg.crossOrigin = "Anonymous";
+        const highResImg = this.getHighResImage(level);
 
-        // Fallback to hqdefault if maxres fails
+        detailImg.crossOrigin = "Anonymous";
         detailImg.src = highResImg;
 
         detailImg.onload = () => {
             this.updateThemeColors(detailImg);
         };
 
-        // Handle image error to fallback to hqdefault or level.image
+        // Fallback handled by the helper logic mostly, but if even highRes fails (e.g. 404),
+        // we might want a final safety net, though getHighResImage returns the best guess.
         detailImg.onerror = () => {
-            if (ytId && detailImg.src.includes('maxresdefault')) {
-                detailImg.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-            } else if (detailImg.src !== level.image) {
-                detailImg.src = level.image;
-            }
+            if (detailImg.src !== level.image) detailImg.src = level.image;
         };
 
+        const ytId = this.getYouTubeId(level.video);
         const thumbImg = document.getElementById('detail-video-thumb');
-        thumbImg.src = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : level.image; // mqdefault is fine for smaller/blurred preview or use hqdefault
-        // Actually, let's use hqdefault for the video preview to ensure it's not "bat"
         thumbImg.src = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : level.image;
 
         document.getElementById('detail-yt-link').href = level.video;
@@ -218,6 +309,15 @@ class DemonListApp {
         if (level.victors === null) {
             this.fetchLevelDetails(id);
         }
+    }
+
+    // Helper to get high res image
+    getHighResImage(level) {
+        const ytId = this.getYouTubeId(level.video);
+        if (ytId) {
+            return `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+        }
+        return level.image;
     }
 
     async fetchLevelDetails(id) {
@@ -275,7 +375,7 @@ class DemonListApp {
                 document.documentElement.style.setProperty('--primary-glow', `rgba(${c1[0]}, ${c1[1]}, ${c1[2]}, 0.5)`);
             }
         } catch (e) {
-            console.warn('Color extraction failed (likely CORS):', e);
+            // console.warn('Color extraction failed (likely CORS):', e);
             // Fallback to defaults
             document.documentElement.style.setProperty('--bg-accent-1', '#3b82f6');
             document.documentElement.style.setProperty('--bg-accent-2', '#ec4899');
@@ -285,7 +385,8 @@ class DemonListApp {
     renderList() {
         const visible = this.getVisibleLevels();
         this.els.listContainer.innerHTML = visible.map((level, index) => `
-            <div class="demon-item p-3 mb-1 rounded-lg flex items-center gap-4 ${level.id === this.state.currentLevelId ? 'active' : ''}" 
+            <div class="demon-item slide-in-left p-3 mb-1 rounded-lg flex items-center gap-4 ${level.id === this.state.currentLevelId ? 'active' : ''}" 
+                 style="animation-delay: ${index * 30}ms"
                  data-id="${level.id}"
                  onclick="app.selectLevel('${level.id}')">
                 <span class="rank-badge w-8 text-center text-lg ${index < 3 ? 'text-yellow-400' : 'text-slate-500'}">#${level.rank}</span>
@@ -330,6 +431,148 @@ class DemonListApp {
                 <span class="text-green-400 font-mono text-[10px] bg-green-400/10 px-1.5 py-0.5 rounded">100%</span>
             </div>
         `}).join('');
+    }
+
+    renderStats() {
+        if (!this.state.levels.length) return;
+
+        // Creators Stats
+        const creatorCounts = {};
+        this.state.levels.forEach(l => {
+            creatorCounts[l.creator] = (creatorCounts[l.creator] || 0) + 1;
+        });
+
+        const topCreators = Object.entries(creatorCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        const creatorsContainer = document.getElementById('stats-creators');
+        creatorsContainer.innerHTML = topCreators.map(([name, count], i) => `
+            <div class="flex justify-between items-center p-2 rounded hover:bg-white/5 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-slate-500 font-bold w-6 text-sm">#${i + 1}</span>
+                    <span class="text-white font-medium">${name}</span>
+                </div>
+                <span class="text-blue-400 font-bold text-sm bg-blue-400/10 px-2 py-0.5 rounded">${count} Levels</span>
+            </div>
+        `).join('');
+
+        // Verifiers Stats
+        const verifierCounts = {};
+        this.state.levels.forEach(l => {
+            verifierCounts[l.verifier] = (verifierCounts[l.verifier] || 0) + 1;
+        });
+
+        const topVerifiers = Object.entries(verifierCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        const verifiersContainer = document.getElementById('stats-verifiers');
+        verifiersContainer.innerHTML = topVerifiers.map(([name, count], i) => `
+            <div class="flex justify-between items-center p-2 rounded hover:bg-white/5 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-slate-500 font-bold w-6 text-sm">#${i + 1}</span>
+                    <span class="text-white font-medium">${name}</span>
+                </div>
+                <span class="text-green-400 font-bold text-sm bg-green-400/10 px-2 py-0.5 rounded">${count} Levels</span>
+            </div>
+        `).join('');
+    }
+
+    initRoulette() {
+        const spinBtn = document.getElementById('btn-spin');
+        const goToBtn = document.getElementById('btn-go-to-level');
+        this.els.rouletteCard = document.getElementById('roulette-card');
+        this.els.rouletteResult = document.getElementById('roulette-result');
+        this.els.rouletteContent = document.getElementById('roulette-content');
+        this.state.isSpinning = false; // Initialize spinning state
+
+        spinBtn.addEventListener('click', () => {
+            if (this.state.isSpinning) return;
+            this.spinRoulette();
+        });
+
+        goToBtn.addEventListener('click', () => {
+            if (this.state.rouletteLevelId) {
+                this.selectLevel(this.state.rouletteLevelId);
+                this.switchView('main');
+            }
+        });
+    }
+
+    spinRoulette() {
+        this.state.isSpinning = true;
+        const spinBtn = document.getElementById('btn-spin');
+        spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        this.els.rouletteContent.classList.add('hidden');
+        this.els.rouletteResult.classList.remove('hidden');
+        this.els.rouletteCard.classList.remove('roulette-winner');
+
+        const rName = document.getElementById('r-name');
+        const rCreator = document.getElementById('r-creator');
+
+        let ticks = 0;
+        let speed = 50; // Initial speed (ms)
+        const levels = this.state.levels;
+
+        const shuffle = () => {
+            // Pick random level
+            const random = levels[Math.floor(Math.random() * levels.length)];
+
+            // Visual Update
+            rName.textContent = random.name;
+            rCreator.textContent = `by ${random.creator}`;
+            // Use standard image for shuffle performance, only high-res at end
+            this.els.rouletteResult.style.backgroundImage = `url('${random.image}')`;
+            this.els.rouletteResult.classList.add('roulette-shuffle'); // Blur effect
+
+            ticks++;
+
+            // Deceleration Logic
+            if (ticks > 15) speed += 10;
+            if (ticks > 20) speed += 20;
+            if (ticks > 25) speed += 50;
+
+            if (ticks < 30) {
+                setTimeout(shuffle, speed);
+            } else {
+                // STOP
+                this.finishSpin(random);
+            }
+        };
+
+        shuffle();
+    }
+
+    finishSpin(level) {
+        this.state.isSpinning = false;
+        const spinBtn = document.getElementById('btn-spin');
+        spinBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+        this.state.rouletteLevelId = level.id;
+
+        // Final UI Set
+        const rName = document.getElementById('r-name');
+        const rCreator = document.getElementById('r-creator');
+
+        rName.textContent = level.name;
+        rCreator.textContent = `by ${level.creator}`;
+
+        // High Res Image for the Winner!
+        const highRes = this.getHighResImage(level);
+        this.els.rouletteResult.style.backgroundImage = `url('${highRes}')`;
+        this.els.rouletteResult.classList.remove('roulette-shuffle');
+
+        // Winning Animation
+        this.els.rouletteCard.classList.add('roulette-winner');
+
+        // Trigger color extraction for immersion?
+        // Why not, let's create a temp image to extract color
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = highRes;
+        img.onload = () => this.updateThemeColors(img);
     }
 
     setText(id, text) {

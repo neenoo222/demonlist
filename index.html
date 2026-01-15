@@ -22,10 +22,10 @@
 
     <!-- Navigation -->
     <nav class="glass-panel z-50 px-8 py-4 flex justify-between items-center border-b border-white/5 relative">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
             <div
-                class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl flex items-center justify-center font-bold text-2xl shadow-lg shadow-blue-500/30 text-white">
-                Δ
+                class="w-14 h-14 flex items-center justify-center -mt-1 filter drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                <img src="css/extreme_demon_icon.png" alt="Extreme Demon" class="w-full h-full object-contain">
             </div>
             <div>
                 <h1 class="text-2xl font-extrabold tracking-tighter uppercase leading-none">Global <span
@@ -34,12 +34,12 @@
             </div>
         </div>
         <div class="hidden md:flex gap-10 text-sm font-bold tracking-wide text-slate-400">
-            <a href="#"
-                class="text-white relative after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-blue-500 after:bottom-[-4px] after:left-0">Main
+            <a href="#" id="nav-main"
+                class="text-white relative after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-blue-500 after:bottom-[-4px] after:left-0 transition-colors">Main
                 List</a>
-            <a href="#" class="hover:text-white transition-colors hover:text-glow">Legacy</a>
-            <a href="#" class="hover:text-white transition-colors hover:text-glow">Stats</a>
-            <a href="#" class="hover:text-white transition-colors hover:text-glow">Roulette</a>
+            <a href="#" id="nav-legacy" class="hover:text-white transition-colors hover:text-glow">Legacy</a>
+            <a href="#" id="nav-stats" class="hover:text-white transition-colors hover:text-glow">Stats</a>
+            <a href="#" id="nav-roulette" class="hover:text-white transition-colors hover:text-glow">Roulette</a>
         </div>
         <button
             class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 transition-all transform hover:-translate-y-0.5">
@@ -82,10 +82,10 @@
 
         <!-- Main Content -->
         <main id="main-content" class="flex-1 overflow-y-auto relative scroll-smooth">
-            <div id="level-detail-view" class="max-w-7xl mx-auto p-6 lg:p-12 opacity-0 transition-opacity duration-300">
-
+            <!-- Level Detail View (Default) -->
+            <div id="level-detail-view" class="max-w-7xl mx-auto p-6 lg:p-12 transition-opacity duration-300">
                 <!-- Hero Section -->
-                <div class="relative mb-8 group">
+                <div class="relative mb-8 group tilt-card">
                     <div
                         class="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent opacity-50 rounded-3xl">
                     </div>
@@ -212,6 +212,71 @@
                 <footer class="mt-20 text-center text-slate-600 text-sm pb-10">
                     <p>&copy; 2026 Global Demonlist. All rights reserved.</p>
                 </footer>
+            </div>
+
+            <!-- Stats View -->
+            <div id="stats-view" class="hidden flex flex-col items-center justify-center p-12 min-h-full">
+                <div class="w-full max-w-6xl space-y-8">
+                    <h2 class="text-5xl font-extrabold text-white text-center mb-12">List <span
+                            class="text-blue-500 text-glow">Statistics</span></h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Top Creators -->
+                        <div class="glass-panel p-6 rounded-2xl">
+                            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <span class="material-icons text-purple-400">brush</span> Top Creators
+                            </h3>
+                            <div id="stats-creators" class="space-y-3">
+                                <!-- Injected -->
+                            </div>
+                        </div>
+
+                        <!-- Top Verifiers -->
+                        <div class="glass-panel p-6 rounded-2xl">
+                            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <span class="material-icons text-green-400">verified_user</span> Top Verifiers
+                            </h3>
+                            <div id="stats-verifiers" class="space-y-3">
+                                <!-- Injected -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roulette View -->
+            <div id="roulette-view"
+                class="hidden flex flex-col items-center justify-center min-h-full p-12 relative overflow-hidden">
+                <div class="text-center z-10 space-y-8 perspective">
+                    <h2 class="text-5xl font-extrabold text-white">Demon <span
+                            class="text-pink-500 text-glow">Roulette</span></h2>
+                    <p class="text-slate-400 text-lg">Spin the wheel to find your next challenge.</p>
+
+                    <div id="roulette-card"
+                        class="w-96 h-64 bg-black/40 glass-panel rounded-3xl flex items-center justify-center border border-white/10 shadow-2xl mx-auto transform transition-all relative overflow-hidden">
+                        <div id="roulette-content" class="text-center">
+                            <span class="material-icons text-6xl text-slate-700 mb-4">question_mark</span>
+                            <p class="text-slate-500 font-bold uppercase tracking-widest">Ready to Spin</p>
+                        </div>
+                        <div id="roulette-result"
+                            class="hidden absolute inset-0 w-full h-full bg-cover bg-center flex flex-col justify-end p-6">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                            <div class="relative z-10 text-left">
+                                <h3 id="r-name" class="text-2xl font-bold text-white leading-none mb-1">Level</h3>
+                                <p id="r-creator" class="text-sm text-slate-300 mb-4">By Creator</p>
+                                <button id="btn-go-to-level"
+                                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase py-2 px-4 rounded-lg shadow-lg shadow-blue-600/40 transition-all">
+                                    View Level
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="btn-spin"
+                        class="px-8 py-4 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold rounded-full text-xl shadow-xl shadow-pink-600/30 hover:scale-105 hover:shadow-pink-600/50 transition-all active:scale-95">
+                        <span class="flex items-center gap-2"><span class="material-icons">refresh</span> SPIN</span>
+                    </button>
+                </div>
             </div>
         </main>
     </div>
