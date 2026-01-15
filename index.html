@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Demonlist | Top GD Levels</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="h-screen flex flex-col">
+
+    <!-- Background Animation -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="glass-panel z-50 px-8 py-4 flex justify-between items-center border-b border-white/5 relative">
+        <div class="flex items-center gap-4">
+            <div
+                class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl flex items-center justify-center font-bold text-2xl shadow-lg shadow-blue-500/30 text-white">
+                Δ
+            </div>
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tighter uppercase leading-none">Global <span
+                        class="text-blue-500 text-glow">Demonlist</span></h1>
+                <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase mt-1">Official Ranking</p>
+            </div>
+        </div>
+        <div class="hidden md:flex gap-10 text-sm font-bold tracking-wide text-slate-400">
+            <a href="#"
+                class="text-white relative after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-blue-500 after:bottom-[-4px] after:left-0">Main
+                List</a>
+            <a href="#" class="hover:text-white transition-colors hover:text-glow">Legacy</a>
+            <a href="#" class="hover:text-white transition-colors hover:text-glow">Stats</a>
+            <a href="#" class="hover:text-white transition-colors hover:text-glow">Roulette</a>
+        </div>
+        <button
+            class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 transition-all transform hover:-translate-y-0.5">
+            Submit Record
+        </button>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden relative z-10">
+        <!-- Sidebar -->
+        <aside class="w-80 lg:w-96 glass-panel flex flex-col border-r border-white/5 backdrop-blur-xl">
+            <!-- Toolbar -->
+            <div class="p-4 border-b border-white/5 bg-black/20 space-y-3">
+                <div class="relative">
+                    <span class="material-icons absolute left-3 top-2.5 text-slate-500 text-lg">search</span>
+                    <input type="text" id="search-input" placeholder="Search levels..."
+                        class="w-full bg-slate-900/80 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-500">
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-sort"
+                        class="flex-1 bg-slate-800 hover:bg-slate-700 border border-white/5 text-slate-300 text-xs font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                        <span class="material-icons text-sm">format_list_numbered</span> Rank
+                    </button>
+                    <button id="btn-random"
+                        class="flex-1 bg-gradient-to-r from-purple-900/50 to-pink-900/50 hover:from-purple-800/50 hover:to-pink-800/50 border border-white/5 text-pink-300 text-xs font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-all">
+                        <span class="material-icons text-sm">casino</span> Surprise Me
+                    </button>
+                </div>
+            </div>
+
+            <!-- List -->
+            <div id="demon-list-container" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <!-- Items injected here -->
+            </div>
+
+            <div class="p-2 text-center text-[10px] text-slate-600 border-t border-white/5">
+                Use <span class="font-mono bg-slate-800 px-1 rounded text-slate-400">↑</span> <span
+                    class="font-mono bg-slate-800 px-1 rounded text-slate-400">↓</span> to navigate
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 overflow-y-auto relative scroll-smooth">
+            <div id="level-detail-view" class="max-w-7xl mx-auto p-6 lg:p-12 opacity-0 transition-opacity duration-300">
+
+                <!-- Hero Section -->
+                <div class="relative mb-8 group">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent opacity-50 rounded-3xl">
+                    </div>
+                    <img id="detail-image" src="" alt=""
+                        class="w-full h-[350px] object-cover rounded-3xl shadow-2xl hero-image-container">
+
+                    <div
+                        class="absolute bottom-0 left-0 w-full p-8 lg:p-12 z-10 flex flex-col md:flex-row items-end justify-between gap-6">
+                        <div>
+                            <div class="flex items-center gap-4 mb-2">
+                                <span id="detail-rank"
+                                    class="bg-blue-600 text-white px-3 py-1 rounded text-xl font-bold font-mono shadow-lg shadow-blue-600/50">#1</span>
+                                <div class="flex gap-2">
+                                    <span
+                                        class="px-2 py-1 rounded bg-red-500/20 text-red-500 text-[10px] uppercase font-bold border border-red-500/20 tracking-wider">Extreme
+                                        Demon</span>
+                                    <span
+                                        class="px-2 py-1 rounded bg-purple-500/20 text-purple-400 text-[10px] uppercase font-bold border border-purple-500/20 tracking-wider">Mythic</span>
+                                </div>
+                            </div>
+                            <h2 id="detail-name"
+                                class="text-6xl lg:text-7xl font-extrabold tracking-tighter text-white neon-text mb-2">
+                                Level Name</h2>
+                            <div class="flex items-center gap-2 text-slate-300">
+                                <span class="material-icons text-sm">person</span>
+                                <span class="text-sm font-bold uppercase tracking-widest text-slate-500">By</span>
+                                <span id="detail-creator"
+                                    class="text-white font-bold text-lg hover:text-blue-400 cursor-pointer transition">---</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="stat-pill px-6 py-3 rounded-xl flex flex-col items-center min-w-[100px] cursor-pointer"
+                                onclick="copyLevelID()">
+                                <header class="text-[10px] uppercase tracking-widest text-slate-500 mb-1">ID</header>
+                                <span id="detail-id" class="text-xl font-mono font-bold text-blue-400">---</span>
+                            </div>
+                            <div class="stat-pill px-6 py-3 rounded-xl flex flex-col items-center min-w-[100px]">
+                                <header class="text-[10px] uppercase tracking-widest text-slate-500 mb-1">Points
+                                </header>
+                                <span id="detail-points" class="text-xl font-mono font-bold text-green-400">---</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-8 space-y-8">
+
+                        <!-- Video and Links -->
+                        <div class="space-y-4">
+                            <a id="video-click-link" href="#" target="_blank"
+                                class="block video-wrapper relative rounded-2xl overflow-hidden border border-white/10 group shadow-2xl">
+                                <div class="pt-[56.25%]"></div> <!-- Aspect Ratio -->
+                                <img id="detail-video-thumb" src=""
+                                    class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-40">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div
+                                        class="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-600/40 transform transition-transform group-hover:scale-110">
+                                        <span class="material-icons text-4xl text-white ml-1">play_arrow</span>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <a id="detail-yt-link" href="#" target="_blank"
+                                class="block w-full bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 text-red-500 font-bold text-center py-4 rounded-xl transition-all uppercase tracking-wide flex items-center justify-center gap-2">
+                                <span class="material-icons">smart_display</span> Watch Verification
+                            </a>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="glass-panel p-8 rounded-2xl relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                            <h3
+                                class="text-xs font-bold uppercase tracking-[0.2em] text-blue-500 mb-4 flex items-center gap-2">
+                                <span class="material-icons text-base">info</span> About Level
+                            </h3>
+                            <p id="detail-about" class="text-lg text-slate-300 leading-relaxed font-light">---</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="lg:col-span-4 space-y-6">
+                        <!-- Info Card -->
+                        <div class="glass-panel rounded-2xl p-6">
+                            <h3
+                                class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 mb-6 border-b border-white/5 pb-2">
+                                Details</h3>
+                            <div class="space-y-5">
+                                <div class="flex justify-between items-center group">
+                                    <span class="text-slate-500 text-sm font-medium flex items-center gap-2"><span
+                                            class="material-icons text-sm">verified</span> Verifier</span>
+                                    <span id="detail-verifier"
+                                        class="text-white font-bold group-hover:text-blue-400 transition">---</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-500 text-sm font-medium flex items-center gap-2"><span
+                                            class="material-icons text-sm">straighten</span> Length</span>
+                                    <span id="detail-length" class="text-white font-bold">---</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-slate-500 text-sm font-medium flex items-center gap-2"><span
+                                            class="material-icons text-sm">monitor_heart</span> Refresh Rate</span>
+                                    <span class="text-white font-bold">360Hz</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Victors -->
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col h-[400px]">
+                            <h3
+                                class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center justify-between">
+                                <span>Victors</span>
+                                <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">Top 100</span>
+                            </h3>
+                            <div id="victors-list" class="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                <!-- Victors injected -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="mt-20 text-center text-slate-600 text-sm pb-10">
+                    <p>&copy; 2026 Global Demonlist. All rights reserved.</p>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        function copyLevelID() {
+            const idTextHTML = document.getElementById('detail-id');
+            const id = idTextHTML.textContent;
+            navigator.clipboard.writeText(id).then(() => {
+                const original = idTextHTML.textContent;
+                idTextHTML.textContent = "Copied!";
+                idTextHTML.classList.add('text-green-500');
+                setTimeout(() => {
+                    idTextHTML.textContent = original;
+                    idTextHTML.classList.remove('text-green-500');
+                }, 1000);
+            });
+        }
+    </script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
