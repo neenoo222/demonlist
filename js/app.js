@@ -74,31 +74,34 @@ class DemonListApp {
     async fetchLevels() {
         this.els.listContainer.innerHTML = '<div class="loader"></div>';
         try {
-            const response = await fetch('https://pointercrate.com/api/v2/demons/listed/?limit=100');
+            const response = await fetch('https://api.demonlist.org/level/classic/list?limit=100&offset=0');
             if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
+            const result = await response.json();
+            const data = result.data.levels;
 
-            this.state.levels = data.map(d => ({
-                rank: d.position,
-                name: d.name,
-                creator: d.publisher.name, // Using publisher as creator
-                verifier: d.verifier.name,
-                id: d.id.toString(), // Pointercrate ID for API calls
-                level_id: d.level_id.toString(), // GD ID for display
-                points: this.calculatePoints(d.position), // Helper to calc points
-                image: d.thumbnail,
-                video: d.video,
-                length: "XL", // Default, API doesn't allow easy sort by length in this view
-                victors: null, // API doesn't return victors in list view, null = not loaded
-                about: `Verified by ${d.verifier.name}. Published by ${d.publisher.name}.`
-            }));
+            this.state.levels = data.map(d => {
+                const ytId = this.getYouTubeId(d.verification_url);
+                const thumbnail = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : 'https://raw.githubusercontent.com/Antigravity-AI/media/main/gd_placeholder.jpg';
+
+                return {
+                    rank: d.placement,
+                    name: d.name,
+                    creator: d.holder, // placeholder, will update in fetchLevelDetails
+                    verifier: d.holder, // placeholder
+                    id: d.id.toString(),
+                    level_id: d.ingame_id.toString(),
+                    points: "0.00", // Will fetch from detailed API
+                    image: thumbnail,
+                    video: d.verification_url,
+                    length: "Loading...",
+                    victors: null,
+                    about: `Loading details...`
+                };
+            });
         } catch (error) {
             console.error('API Load failed, falling back to static data', error);
-            // Fallback to window.demons if available
             if (window.demons) {
                 this.state.levels = [...window.demons];
-                // Try to patch static data with proper points if missing
-                this.state.levels.forEach(l => l.points = l.points || this.calculatePoints(l.rank));
             } else {
                 this.els.listContainer.innerHTML = '<p class="text-red-500 text-center p-4">Failed to load data.</p>';
                 return;
@@ -109,7 +112,7 @@ class DemonListApp {
             if (this.state.levels.length > 0) {
                 this.selectLevel(this.state.levels[0].id);
             }
-            this.renderStats(); // Calculate stats once data is loaded
+            this.renderStats();
         }
     }
 
@@ -321,35 +324,53 @@ class DemonListApp {
     }
 
     async fetchLevelDetails(id) {
-        // Show loading state for victors
         const victorsContainer = document.getElementById('victors-list');
         if (victorsContainer) victorsContainer.innerHTML = '<div class="loader-small"></div>';
 
+        const level = this.state.levels.find(l => l.id == id);
+        if (!level) return;
+
         try {
-            const response = await fetch(`https://pointercrate.com/api/v2/demons/${id}/`);
-            if (!response.ok) throw new Error('Failed to fetch details');
-            const data = await response.json();
+            // 1. Fetch Records
+            const recordsResponse = await fetch(`https://api.demonlist.org/level/classic/record/list?level_id=${id}&limit=50&offset=0`);
+            const recordsData = await recordsResponse.json();
 
-            // Find level in state
-            const levelIndex = this.state.levels.findIndex(l => l.id == id); // Loose equality for string/number mismatch safety
+            // 2. Fetch Level Info (for creator, points, description)
+            const infoResponse = await fetch(`https://api.demonlist.org/level/classic/get?placement=${level.rank}`);
+            const infoData = await infoResponse.json();
+
+            const levelIndex = this.state.levels.findIndex(l => l.id == id);
             if (levelIndex !== -1) {
-                // Update state
-                const records = data.data.records || [];
-                // Map records to just names for now to match renderVictors expectation, 
-                // or we could enhance renderVictors to take objects.
-                // Let's just pass the objects and update renderVictors to handle them for better UX (video links).
-                this.state.levels[levelIndex].victors = records;
+                const detailedInfo = infoData.data;
 
-                // If still selected, re-render
+                // Update state with detailed info
+                this.state.levels[levelIndex].creator = detailedInfo.creator;
+                this.state.levels[levelIndex].verifier = detailedInfo.verification.username;
+                this.state.levels[levelIndex].points = detailedInfo.points;
+                this.state.levels[levelIndex].about = detailedInfo.description;
+                this.state.levels[levelIndex].length = detailedInfo.length + "s";
+                this.state.levels[levelIndex].victors = recordsData.data.records || [];
+
+                // If still selected, re-render everything
                 if (this.state.currentLevelId == id) {
                     this.renderVictors(this.state.levels[levelIndex].victors);
+
+                    // Re-run selectLevel logic for text fields but without the fetch
+                    this.setText('detail-creator', detailedInfo.creator);
+                    this.setText('detail-verifier', detailedInfo.verification.username);
+                    this.setText('detail-points', detailedInfo.points);
+                    this.setText('detail-length', detailedInfo.length + "s");
+                    this.setText('detail-about', detailedInfo.description);
                 }
+
+                // Update the item in the list if creator/points changed
+                this.renderList();
             }
         } catch (error) {
             console.error('Details fetch failed', error);
             const levelIndex = this.state.levels.findIndex(l => l.id == id);
             if (levelIndex !== -1) {
-                this.state.levels[levelIndex].victors = []; // Set to empty on error to stop retrying loops if we had one (we don't, but good practice)
+                this.state.levels[levelIndex].victors = [];
                 if (this.state.currentLevelId == id) {
                     this.renderVictors([]);
                 }
@@ -390,7 +411,10 @@ class DemonListApp {
                  data-id="${level.id}"
                  onclick="app.selectLevel('${level.id}')">
                 <span class="rank-badge w-8 text-center text-lg ${index < 3 ? 'text-yellow-400' : 'text-slate-500'}">#${level.rank}</span>
-                <img src="${level.image}" class="w-16 h-10 object-cover rounded shadow-sm opacity-80 hover:opacity-100 transition-opacity" loading="lazy">
+                <img src="${level.image}" 
+                     class="w-16 h-10 object-cover rounded shadow-sm opacity-80 hover:opacity-100 transition-opacity" 
+                     loading="lazy"
+                     onerror="this.src='https://raw.githubusercontent.com/Antigravity-AI/media/main/gd_placeholder.jpg'; this.onerror=null;">
                 <div class="flex-1 min-w-0 z-10">
                     <h4 class="font-bold text-white truncate text-sm">${level.name}</h4>
                     <p class="text-[10px] text-slate-400 uppercase tracking-wider">${level.creator}</p>
@@ -416,7 +440,7 @@ class DemonListApp {
         container.innerHTML = victors.map(v => {
             // Handle both string (legacy/fallback) and object (new API) formats
             const name = typeof v === 'string' ? v : v.player.name;
-            const videoUrl = typeof v === 'string' ? null : v.video;
+            const videoUrl = typeof v === 'string' ? null : v.video_url;
 
             return `
             <div class="flex items-center justify-between p-2 rounded bg-white/5 border border-white/5 hover:border-white/10 transition-colors group">
@@ -428,7 +452,7 @@ class DemonListApp {
                         </a>
                     ` : ''}
                 </div>
-                <span class="text-green-400 font-mono text-[10px] bg-green-400/10 px-1.5 py-0.5 rounded">100%</span>
+                <span class="text-green-400 font-mono text-[10px] bg-green-400/10 px-1.5 py-0.5 rounded">${typeof v === 'string' ? '100%' : v.percent + '%'}</span>
             </div>
         `}).join('');
     }
@@ -582,8 +606,9 @@ class DemonListApp {
 
     getYouTubeId(url) {
         if (!url) return null;
-        if (url.includes('v=')) return url.split('v=')[1]?.split('&')[0];
-        return url.split('/').pop();
+        const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+        const match = url.match(regex);
+        return match ? match[1] : null;
     }
 }
 
